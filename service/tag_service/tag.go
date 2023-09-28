@@ -2,6 +2,7 @@ package tag_service
 
 import (
 	"encoding/json"
+	"github.com/360EntSecGroup-Skylar/excelize"
 	"github.com/javaSunson/go-gin-example/pkg/file"
 	"github.com/javaSunson/go-gin-example/pkg/logging"
 	"github.com/javaSunson/go-gin-example/service/cache_service"
@@ -9,6 +10,7 @@ import (
 	"go-gin-example/models"
 	"go-gin-example/pkg/export"
 	"go-gin-example/pkg/gredis"
+	"io"
 	"strconv"
 	"time"
 )
@@ -131,4 +133,22 @@ func (t *Tag) getMaps() map[string]interface{} {
 
 func (t *Tag) Count() (int, error) {
 	return models.GetTagTotal(t.getMaps())
+}
+
+func (t *Tag) Import(r io.Reader) error {
+	xlsx, err := excelize.OpenReader(r)
+	if err != nil {
+		return err
+	}
+	rows := xlsx.GetRows("标签信息")
+	for irow, row := range rows {
+		if irow > 0 {
+			var data []string
+			for _, cell := range row {
+				data = append(data, cell)
+			}
+			models.AddTag(data[1], 1, data[2])
+		}
+	}
+	return nil
 }

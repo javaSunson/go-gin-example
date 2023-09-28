@@ -5,6 +5,7 @@ import (
 	"github.com/javaSunson/go-gin-example/middleware/jwt"
 	"github.com/javaSunson/go-gin-example/pkg/setting"
 	"go-gin-example/pkg/export"
+	"go-gin-example/pkg/qrcode"
 	"go-gin-example/pkg/upload"
 	"go-gin-example/routers/api"
 	"go-gin-example/routers/api/v1"
@@ -18,6 +19,7 @@ func InitRouter() *gin.Engine {
 	gin.SetMode(setting.ServerSetting.RunMode)
 	r.StaticFS("/upload/images", http.Dir(upload.GetImageFullPath()))
 	r.StaticFS("/export", http.Dir(export.GetExcelFullPath()))
+	r.StaticFS("/qrcode", http.Dir(qrcode.GetQrCodeFullPath()))
 	r.GET("/auth", api.GetAuth)
 	r.POST("/upload", api.UploadImage)
 	apiv1 := r.Group("/api/v1")
@@ -34,6 +36,8 @@ func InitRouter() *gin.Engine {
 		apiv1.PUT("/articles/:id", v1.EditArticle)
 		apiv1.DELETE("/articles/:id", v1.DeleteArticle)
 		apiv1.POST("/tags/export", v1.ExportTag)
+		apiv1.POST("/tags/import", v1.ImportTag)
+		apiv1.POST("/articles/poster/generate", v1.GenerateArticlePoster)
 	}
 	return r
 }

@@ -2,6 +2,7 @@ package v1
 
 import (
 	"github.com/astaxie/beego/validation"
+	"github.com/boombuler/barcode/qr"
 	"github.com/gin-gonic/gin"
 	"github.com/javaSunson/go-gin-example/pkg/e"
 	"github.com/javaSunson/go-gin-example/pkg/logging"
@@ -10,6 +11,7 @@ import (
 	"github.com/unknwon/com"
 	"go-gin-example/models"
 	"go-gin-example/pkg/app"
+	"go-gin-example/pkg/qrcode"
 	"go-gin-example/service/article_service"
 	"go-gin-example/service/tag_service"
 	"net/http"
@@ -284,4 +286,40 @@ type AddArticleForm struct {
 	CreatedBy     string `form:"created_by" valid:"Required;MaxSize(100)"`
 	CoverImageUrl string `form:"cover_image_url" valid:"Required;MaxSize(255)"`
 	State         int    `form:"state" valid:"Range(0,1)"`
+}
+
+const (
+	QRCODE_URL = "https://github.com/EDDYCJY/blog#gin%E7%B3%BB%E5%88%97%E7%9B%AE%E5%BD%95"
+)
+
+func GenerateArticlePoster(c *gin.Context) {
+	appG := app.Gin{C: c}
+	article := &article_service.Article{}
+	qr := qrcode.NewQrCode(QRCODE_URL, 300, 300, qr.M, qr.Auto)
+	posterName := article_service.GetPosterFlag() + "-" + qrcode.GetQrCodeFileName(qr.URL) + qr.GetQrCodeExt()
+	articlePoster := article_service.NewArticlePoster(posterName, article, qr)
+
+	articlePosterBgService := article_service.NewArticlePosterBg(
+		"bg.jpg",
+		articlePoster,
+		&article_service.Rect{
+			X0: 0,
+			Y0: 0,
+			X1: 500,
+			Y1: 700,
+		},
+		&article_service.Pt{
+			X: 125,
+			Y: 298,
+		},
+	)
+	_, filePath, err := articlePosterBgService.Generate()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_GEN_ARTICLE_POSTER_FAIL, nil)
+		return
+	}
+	appG.Response(http.StatusOK, e.SUCCESS, map[string]string{
+		"poster_url":      qrcode.GetQrCodeFullUrl(posterName),
+		"poster_save_url": filePath + posterName,
+	})
 }

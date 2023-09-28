@@ -4,6 +4,7 @@ import (
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
 	"github.com/javaSunson/go-gin-example/pkg/e"
+	"github.com/javaSunson/go-gin-example/pkg/logging"
 	"github.com/javaSunson/go-gin-example/pkg/setting"
 	"github.com/javaSunson/go-gin-example/pkg/util"
 	"github.com/unknwon/com"
@@ -166,4 +167,22 @@ func ExportTag(c *gin.Context) {
 		"export_url":      export.GetExcelFullUrl(filename),
 		"export_save_url": export.GetExcelPath() + filename,
 	})
+}
+
+func ImportTag(c *gin.Context) {
+	appG := app.Gin{C: c}
+	file, _, err := c.Request.FormFile("file")
+	if err != nil {
+		logging.Warn(err)
+		appG.Response(http.StatusOK, e.ERROR, nil)
+		return
+	}
+	tagService := tag_service.Tag{}
+	err = tagService.Import(file)
+	if err != nil {
+		logging.Warn(err)
+		appG.Response(http.StatusOK, e.ERROR_IMPORT_TAG_FAIL, nil)
+		return
+	}
+	appG.Response(http.StatusOK, e.SUCCESS, nil)
 }
